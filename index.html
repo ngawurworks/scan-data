@@ -83,49 +83,69 @@
       }
     };
   
+    let foundPenjual = false;
+    let foundPembeli = false;
+    let barangMode = false;
+  
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
   
-      // Dynamic Penjual detection
-      if (line.startsWith('Nama :') && !faktur.penjual.nama) {
+      // Penjual
+      if (!foundPenjual && line.startsWith('Nama :')) {
         faktur.penjual.nama = line.replace('Nama :', '').trim();
-        faktur.penjual.alamat = lines[i + 1]?.replace('Alamat :', '').trim();
+        if (lines[i + 1]?.startsWith('Alamat :')) {
+          faktur.penjual.alamat = lines[i + 1].replace('Alamat :', '').trim();
+          faktur.penjual.npwp = lines[i + 2]?.includes('NPWP') ? lines[i + 2].replace('NPWP :', '').trim() : '';
+          foundPenjual = true;
+          i += 2;
+          continue;
+        }
       }
   
-      // Dynamic Pembeli detection (assuming it's after Penjual)
-      if (line.startsWith('Nama :') && faktur.penjual.nama && !faktur.pembeli.nama && i > 2) {
+      // Pembeli
+      if (foundPenjual && !foundPembeli && line.startsWith('Nama :')) {
         faktur.pembeli.nama = line.replace('Nama :', '').trim();
-        faktur.pembeli.alamat = lines[i + 1]?.replace('Alamat :', '').trim();
+        if (lines[i + 1]?.startsWith('Alamat :')) {
+          faktur.pembeli.alamat = lines[i + 1].replace('Alamat :', '').trim();
+          faktur.pembeli.npwp = lines[i + 2]?.includes('NPWP') ? lines[i + 2].replace('NPWP :', '').trim() : '';
+          foundPembeli = true;
+          i += 2;
+          continue;
+        }
       }
   
-      // Barang list based on numeric index (1, 2, 3...)
-      if (/^\d+/.test(line)) {
+      // Barang
+      if (line.match(/^\d+\s+\d+/)) {
+        barangMode = true;
         const namaBarang = lines[i + 1];
-        const hargaMatch = lines[i + 4]?.match(/([\d.,]+)$/);
-        const harga = hargaMatch ? hargaMatch[1] : null;
+        const hargaLine = lines[i + 2];
+        const hargaMatch = hargaLine?.match(/Rp\s*([\d.,]+)/i);
+        const harga = hargaMatch ? hargaMatch[1].replace(/\./g, '').replace(',', '.') : null;
+  
         faktur.barang.push({
           nama: namaBarang,
           harga: harga
         });
       }
   
-      // Totals
-      if (line.includes('Harga Jual / Penggantian')) {
-        faktur.total.hargaJual = lines[i + 1]?.replace(/[^\d.,]/g, '');
+      // Total detection (normalized)
+      if (line.includes('Harga Jual') && lines[i + 1]) {
+        faktur.total.hargaJual = lines[i + 1].replace(/[^\d.,]/g, '');
       }
-      if (line.includes('Dasar Pengenaan Pajak')) {
-        faktur.total.dasarPengenaan = lines[i + 1]?.replace(/[^\d.,]/g, '');
+      if (line.includes('Dasar Pengenaan Pajak') && lines[i + 1]) {
+        faktur.total.dasarPengenaan = lines[i + 1].replace(/[^\d.,]/g, '');
       }
-      if (line.includes('Jumlah PPN')) {
-        faktur.total.ppn = lines[i + 1]?.replace(/[^\d.,]/g, '');
+      if (line.includes('Jumlah PPN') && lines[i + 1]) {
+        faktur.total.ppn = lines[i + 1].replace(/[^\d.,]/g, '');
       }
-      if (line.includes('Jumlah PPnBM')) {
-        faktur.total.ppnbm = lines[i + 1]?.replace(/[^\d.,]/g, '');
+      if (line.includes('Jumlah PPnBM') && lines[i + 1]) {
+        faktur.total.ppnbm = lines[i + 1].replace(/[^\d.,]/g, '');
       }
     }
   
     return faktur;
   }
+
 
 </script>
 
