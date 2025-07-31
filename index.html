@@ -82,24 +82,24 @@
         ppnbm: null
       }
     };
-
+  
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-
-      // Penjual
-      if (line.includes('Nama : PT OMEGA LIMA ENAM')) {
-        faktur.penjual.nama = 'PT OMEGA LIMA ENAM';
+  
+      // Dynamic Penjual detection
+      if (line.startsWith('Nama :') && !faktur.penjual.nama) {
+        faktur.penjual.nama = line.replace('Nama :', '').trim();
         faktur.penjual.alamat = lines[i + 1]?.replace('Alamat :', '').trim();
       }
-
-      // Pembeli
-      if (line.includes('Nama : PT BETA ARUMA')) {
-        faktur.pembeli.nama = 'PT BETA ARUMA';
+  
+      // Dynamic Pembeli detection (assuming it's after Penjual)
+      if (line.startsWith('Nama :') && faktur.penjual.nama && !faktur.pembeli.nama && i > 2) {
+        faktur.pembeli.nama = line.replace('Nama :', '').trim();
         faktur.pembeli.alamat = lines[i + 1]?.replace('Alamat :', '').trim();
       }
-
-      // Barang
-      if (line.startsWith('1') || line.startsWith('2')) {
+  
+      // Barang list based on numeric index (1, 2, 3...)
+      if (/^\d+/.test(line)) {
         const namaBarang = lines[i + 1];
         const hargaMatch = lines[i + 4]?.match(/([\d.,]+)$/);
         const harga = hargaMatch ? hargaMatch[1] : null;
@@ -108,8 +108,8 @@
           harga: harga
         });
       }
-
-      // Total
+  
+      // Totals
       if (line.includes('Harga Jual / Penggantian')) {
         faktur.total.hargaJual = lines[i + 1]?.replace(/[^\d.,]/g, '');
       }
@@ -123,9 +123,10 @@
         faktur.total.ppnbm = lines[i + 1]?.replace(/[^\d.,]/g, '');
       }
     }
-
+  
     return faktur;
   }
+
 </script>
 
 </body>
