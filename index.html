@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Scan Faktur Pajak</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    #preview {
+      max-width: 100%;
+      height: auto;
+    }
+    #output {
+      white-space: pre-wrap;
+      background: #f5f5f5;
+      padding: 10px;
+      margin-top: 20px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Scan Faktur Pajak dari Gambar</h2>
+<input type="file" id="imageInput" accept="image/*"><br><br>
+<img id="preview" src="" alt="Preview Image"><br>
+<button onclick="scanImage()">Scan Image</button>
+
+<h3>Hasil OCR:</h3>
+<div id="output">Belum ada hasil.</div>
+
+<script>
+  const imageInput = document.getElementById('imageInput');
+  const preview = document.getElementById('preview');
+  const output = document.getElementById('output');
+
+  imageInput.addEventListener('change', function () {
+    const file = this.files[0];
+    if (file) {
+      preview.src = URL.createObjectURL(file);
+    }
+  });
+
+  function scanImage() {
+    output.innerText = 'Memindai... mohon tunggu.';
+    Tesseract.recognize(
+      preview.src,
+      'eng+ind',
+      {
+        logger: m => console.log(m),
+      }
+    ).then(({ data: { text } }) => {
+      output.innerText = text;
+    }).catch(err => {
+      output.innerText = 'Terjadi kesalahan saat OCR:\n' + err;
+    });
+  }
+</script>
+
+</body>
+</html>
